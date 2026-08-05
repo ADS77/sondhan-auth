@@ -1,0 +1,25 @@
+# Maven
+target/
+*.class
+*.jar
+
+# Secrets — never commit
+application-secrets.yml
+*.pem
+*.p12
+*.jks
+.env
+
+# IDE
+.idea/
+*.iml
+.vscode/
+*.DS_Store
+
+# Logs
+*.log
+logs/
+
+# Docker volumes
+postgres_data/
+redis_data/
