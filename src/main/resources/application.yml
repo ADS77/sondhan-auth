@@ -1,0 +1,93 @@
+server:
+  port: 8086
+  servlet:
+    context-path: /sondhan
+
+spring:
+  application:
+    name: sondhan-auth-service
+
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/sondhan_auth}
+    username: ${DB_USER:sondhan_app}
+    password: "sondhan_@#"
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
+      connection-timeout: 30000
+
+  jpa:
+    hibernate:
+      ddl-auto: validate          # Flyway owns DDL; Hibernate only validates
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: false
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: false
+
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+    default-property-inclusion: non_null
+
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: "sondhan_@#"
+
+# ─── Application-specific config ──────────────────────────────────────────
+app:
+  pii:
+    encryption-key: "@#$Ad01100110010110011001@#$"  # pgcrypto symmetric encryption key
+
+  #  twilio:
+  #    account-sid: ${TWILIO_ACCOUNT_SID}
+  #    auth-token: ${TWILIO_AUTH_TOKEN}
+  #    from-number: ${TWILIO_FROM_NUMBER}
+  #    enabled: ${TWILIO_ENABLED:true}
+
+  async:
+    core-pool-size: 4
+    max-pool-size: 8
+    queue-capacity: 500
+    keep-alive-seconds: 60
+
+  cors:
+    allowed-origins:
+      - ${CORS_ORIGIN_1:http://localhost:3000}
+      - ${CORS_ORIGIN_2:http://localhost:5173}
+
+# ─── SpringDoc / Swagger ──────────────────────────────────────────────────
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /auth/docs
+    operations-sorter: method
+  show-actuator: false
+
+# ─── Actuator ─────────────────────────────────────────────────────────────
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, info
+  endpoint:
+    health:
+      show-details: never
+
+# ─── Logging ──────────────────────────────────────────────────────────────
+logging:
+  level:
+    com.bloodlink.auth: INFO
+    org.springframework.security: WARN
+    org.flywaydb: INFO
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] [%X{request_id}] [%X{user_id}] %-5level %logger{36} - %msg%n"
