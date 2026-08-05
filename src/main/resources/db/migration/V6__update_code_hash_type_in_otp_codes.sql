@@ -1,0 +1,2 @@
+ALTER TABLE otp_codes
+ALTER COLUMN code_hash TYPE VARCHAR(64);

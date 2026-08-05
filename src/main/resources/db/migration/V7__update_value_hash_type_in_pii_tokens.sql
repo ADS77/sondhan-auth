@@ -1,0 +1,2 @@
+ALTER TABLE pii_tokens
+ALTER COLUMN value_hash TYPE VARCHAR(64);
