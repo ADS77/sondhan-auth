@@ -1,0 +1,76 @@
+
+services:
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: sondhan-auth-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: sondhan_auth
+      POSTGRES_USER: sondhan_app
+      POSTGRES_PASSWORD: "sondhan_@#"
+    ports:
+      - "5432:5432"
+    volumes:
+      - sondhan_auth_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sondhan_app -d sondhan_auth"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: sondhan-redis
+    restart: unless-stopped
+    command: >
+      redis-server
+      --requirepass ${REDIS_PASSWORD:-sondhan_@#}
+      --maxmemory 256mb
+      --maxmemory-policy allkeys-lru
+    ports:
+      - "6379:6379"
+    volumes:
+      - sondhan_auth_redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-sondhan_@#}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  auth-service:
+    build:
+      context: ..
+      dockerfile: Docker/Dockerfile
+    container_name: sondhan-auth
+    restart: unless-stopped
+    ports:
+      - "8086:8086"
+    volumes:
+      - ../private.pem:/keys/private.pem:ro
+      - ../public.pem:/keys/public.pem:ro
+
+    environment:
+      DB_URL: jdbc:postgresql://postgres:5432/sondhan_auth
+      DB_USER: sondhan_app
+      DB_PASSWORD: ${DB_PASSWORD}
+      PII_ENCRYPTION_KEY: ${PII_ENCRYPTION_KEY}
+      # TWILIO_ACCOUNT_SID: ${TWILIO_ACCOUNT_SID}
+      # TWILIO_AUTH_TOKEN: ${TWILIO_AUTH_TOKEN}
+      # TWILIO_FROM_NUMBER: ${TWILIO_FROM_NUMBER}
+      # TWILIO_ENABLED: ${TWILIO_ENABLED:-true}
+      CORS_ORIGIN_1: ${CORS_ORIGIN_1:-http://localhost:3000}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8086/actuator/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+volumes:
+  sondhan_auth_postgres_data:
+  sondhan_auth_redis_data:
+
